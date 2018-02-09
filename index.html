@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<title>Tic Tac Toe</title>
+		<meta charset="utf-8">
+		<meta name="description" content="A version of tic tac toe in JS. Inspired by http://redqueengamedev.com.">
+		<meta name="author" content="Derek Pennycuff">
+  </head>
+  <body>
+    <p id="instructions"></p>
+    <pre id="grid"></pre>
+    <button id="start">Start Game</button>
+  </body>
+  <script>
+    const turnOrder = Object.freeze({
+      'notPlaying':'X',
+      'X':'O',
+      'O':'X',
+    });
+    const gameStates = Object.freeze({
+      'notPlaying':'notPlaying',
+      'X':'X',
+      'O':'O',
+      'win':{'X':'winX', 'O':'winO'},
+      'draw':'draw',
+    });
+    const playStates = Object.freeze({
+      'X':'X',
+      'O':'O',
+    });
+    const stateInstructions = Object.freeze({
+      'notPlaying':'Press Start Button!',
+      'X':'game X choose your move! (Use the number keys on your keyboard)',
+      'O':'game O choose your move! (Use the number keys on your keyboard)',
+      'winX':'game X a winner is you!',
+      'winO':'game O a winner is you!',
+      'draw':'A tie is like kissing your sister!',
+    });
+    const tileStates = Object.freeze({
+      'notSelected':'notSelected',
+      'X':'X',
+      'O':'O',
+    });
+    const tileStateStrings = Object.freeze({
+      'notSelected':'',
+      'X':'X',
+      'O':'O',
+    });
+    const keyCodesToIndex = Object.freeze({
+      57:8,
+      56:7,
+      55:6,
+      54:5,
+      53:4,
+      52:3,
+      51:2,
+      50:1,
+      49:0,
+    });
+    const winConditions = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [2, 4, 6],
+      [0, 4, 8],
+      [1, 3, 5, 7], // adding an oddball win condition
+    ];
+    const boardSize = 9;
+
+    function resetBoard() {
+      const board = [];
+      for(let i = 0; i < boardSize; i++) {
+        board.push(tileStates.notSelected);
+      }
+
+      return board;
+    }
+
+    function makeMove(tile, game, board) {
+      board[tile] = (board[tile] == tileStates.notSelected) ? game : board[tile];
+
+      return board;
+    }
+
+    function nextState(game, board) {
+      if (checkWin(game, board)) {
+        return gameStates.win[game];
+      } else if (! movesRemaining(board)) {
+        return gameStates.draw;
+      } else {
+        return turnOrder[game];
+      }
+    }
+
+    function checkWin(game, board) {
+      const checker = checkWinConditionForgameAndBoard(game, board);
+
+      return winConditions.reduce(
+        (accumulator, currentValue) => accumulator || checker(currentValue),
+        false
+      );
+    }
+
+    function checkWinCondition(game, board, condition) {
+      return condition.reduce(
+        function(accumulator, currentValue) {
+          return accumulator && board[currentValue] === game;
+        },
+        true
+      );
+    }
+
+    function checkWinConditionForgameAndBoard(game, board) {
+      return function(condition) {
+        return checkWinCondition(game, board, condition);
+      }
+    }
+
+    function movesRemaining(board) {
+      return board.some(item => item === tileStates.notSelected);
+    }
+
+    function boardStateToStrings(board) {
+      const strings = [];
+      for (var key in board) {
+        strings.push(tileStateStrings[board[key]] || parseInt(key, 10) + 1)
+      }
+
+      return strings;
+    }
+
+    function boardStringsToTemplate(boardStrings) {
+      return `
+         ${boardStrings[6]} | ${boardStrings[7]} | ${boardStrings[8]}
+        -----------
+         ${boardStrings[3]} | ${boardStrings[4]} | ${boardStrings[5]}
+        -----------
+         ${boardStrings[0]} | ${boardStrings[1]} | ${boardStrings[2]}
+      `;
+    }
+
+    function boardToTemplate(board) {
+      return boardStringsToTemplate(boardStateToStrings(board));
+    }
+
+    function paint(game, board) {
+      console.log('Painting...');
+      console.log({game:game, board:board});
+      instructions.innerHTML = stateInstructions[game];
+      grid.innerHTML = boardToTemplate(board);
+    }
+
+    function startGame() {
+      board = resetBoard();
+      game = gameStates.X;
+      paint(game, board);
+    }
+
+    function play(event) {
+      if (
+        keyCodesToIndex.hasOwnProperty(event.keyCode) &&
+        playStates.hasOwnProperty(game) &&
+        board[keyCodesToIndex[event.keyCode]] === tileStates.notSelected
+      ) {
+        board = makeMove(keyCodesToIndex[event.keyCode], game, board);
+        game = nextState(game, board);
+      }
+
+      paint(game, board);
+    }
+    const instructions = document.querySelector('#instructions');
+    const grid = document.querySelector('#grid');
+    document.querySelector('#start').addEventListener('click', startGame);
+    window.addEventListener('keydown', play);
+
+    let game = gameStates.notPlaying, board = resetBoard();
+    paint(game, board);
+  </script>
+</html>
